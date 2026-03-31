@@ -150,46 +150,87 @@
         } catch (e) { console.error("Sync Error:", e); }
     }
 
-    function drawZodiac(planets) {
-        const canvas = document.getElementById('zodiacCanvas');
-        const ctx = canvas.getContext('2d');
-        const cx = 165, cy = 165, r = 115; // Gran radio para el look v2.6.4
-        canvas.width = 330; canvas.height = 330;
+function drawZodiac(planets) {
+    const canvas = document.getElementById('zodiacCanvas');
+    const ctx = canvas.getContext('2d');
+    const cx = 150, cy = 150; // Centro
+    const rIn = 70, rOut = 100, rText = 125; // Radios (Interior, Exterior, Texto)
+    canvas.width = 300; canvas.height = 300;
 
-        ctx.clearRect(0,0,330,330);
-        
-        // Círculo zodiacal y divisiones (oscuro y minimalista)
-        ctx.strokeStyle = '#1e222d'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.stroke();
-        for(let i=0; i<12; i++) {
-            let a = (i*30 - 180) * Math.PI/180;
-            ctx.beginPath();
-            ctx.moveTo(cx + r*Math.cos(a), cy + r*Math.sin(a));
-            ctx.lineTo(cx + (r-15)*Math.cos(a), cy + (r-15)*Math.sin(a));
-            ctx.stroke();
-        }
+    // Configuración estética (Colores y Glifos de tu diseño original)
+    const pConf = {
+        'Sun': { g: '☉', c: '#FFD700', s: 26 }, // Sol Amarillo Brillante
+        'Moon': { g: '☽', c: '#FFFFFF', s: 22 }, // Luna Blanca
+        'Mars': { g: '♂', c: '#FF4B4B', s: 20 }, // Marte Rojo
+        'Jupiter': { g: '♃', c: '#7d84ff', s: 19 },
+        'Saturn': { g: '♄', c: '#888888', s: 19 },
+        'Venus': { g: '♀', c: '#00ffcc', s: 20 }, // Venus Cian/Verde
+        'Mercury': { g: '☿', c: '#FAB1A0', s: 20 }
+    };
 
-        // Configuración de planetas v2.6.4
-        const icons = { Sun:'☉', Moon:'☽', Mars:'♂', Jupiter:'♃', Saturn:'♄', Venus:'♀', Mercury:'☿' };
-        const colors = { Sun:'#ffcc00', Moon:'#ffffff', Mars:'#ff3e3e', Jupiter:'#7d84ff', Saturn:'#888888', Venus:'#00ffcc', Mercury:'#ff9f43' };
+    const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
 
-        Object.entries(planets).forEach(([p, pos]) => {
-            const angle = (parseFloat(pos) - 180) * Math.PI/180;
-            const x = cx + (r-35)*Math.cos(angle);
-            const y = cy + (r-35)*Math.sin(angle);
+    ctx.clearRect(0, 0, 300, 300);
+    
+    // --- 1. Fondo Minimalista (Círculos) ---
+    ctx.strokeStyle = '#1e222d'; // Color oscuro sutil
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, rIn, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.stroke();
 
-            // Efecto de brillo (Glow)
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = colors[p] || '#ffffff';
-            ctx.fillStyle = colors[p] || '#ffffff';
-            
-            // Glifos grandes
-            ctx.font = '22px Arial, sans-serif'; 
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(icons[p] || '●', x, y);
-            ctx.shadowBlur = 0; // Reset sombra
-        });
+    // --- 2. Divisiones de Casas y Nombres de Signos (Look Profesional) ---
+    for(let i=0; i<12; i++) {
+        // CORRECCIÓN DE ÁNGULO: 0° Aries a la IZQUIERDA (Tradicional)
+        let aBase = i * 30 + 180; 
+        let aLine = (aBase) * Math.PI / 180;
+        let aText = (aBase + 15) * Math.PI / 180; // Texto en el centro del signo
+
+        // Línea divisoria
+        ctx.beginPath();
+        ctx.moveTo(cx + rIn * Math.cos(aLine), cy + rIn * Math.sin(aLine));
+        ctx.lineTo(cx + rOut * Math.cos(aLine), cy + rOut * Math.sin(aLine));
+        ctx.stroke();
+
+        // Nombre del Signo (Rotado y en el anillo)
+        ctx.save();
+        ctx.translate(cx + (rOut - 10) * Math.cos(aText), cy + (rOut - 10) * Math.sin(aText));
+        ctx.rotate(aText + Math.PI / 2); // Rotación vertical
+        ctx.font = 'bold 8px Inter, sans-serif'; 
+        ctx.fillStyle = '#444'; // Gris oscuro sutil
+        ctx.textAlign = 'center'; 
+        ctx.fillText(signs[i], 0, 0);
+        ctx.restore();
     }
+
+    // --- 3. Planetas Dinámicos con Efecto Brillo (Neón) ---
+    Object.entries(planets).forEach(([name, pos]) => {
+        // CORRECCIÓN DE ÁNGULO: Ajustar al 0° de Aries a la izquierda
+        const angle = (parseFloat(pos) + 180) * Math.PI / 180;
+        const conf = pConf[name] || { g: '●', c: '#7d84ff', s: 16 };
+        
+        // Coordenadas para el planeta (entre rIn y rOut)
+        const pr = rIn + 15;
+        const x = cx + pr * Math.cos(angle);
+        const y = cy + pr * Math.sin(angle);
+
+        // A. Brillo (Glow)
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = conf.c;
+        ctx.fillStyle = conf.c;
+        
+        // B. Glifo (Agrandado)
+        ctx.font = `${conf.s}px Arial, sans-serif`; 
+        ctx.textAlign = 'center'; 
+        ctx.textBaseline = 'middle';
+        ctx.fillText(conf.g, x, y);
+        ctx.shadowBlur = 0; // Reset sombra
+
+        // C. Nombre debajo (Pequeño)
+        ctx.font = '7px Inter, sans-serif'; 
+        ctx.fillStyle = '#666'; // Gris sutil
+        ctx.fillText(name.toUpperCase(), x, y + 14);
+    });
+}
 
     function renderList(planets) {
         let h = '';
