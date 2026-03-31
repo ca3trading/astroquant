@@ -86,8 +86,10 @@
 
         // ESTABILIZAR ESCALA PARA QUE NADA SE MUEVA O AMONTONE
         charts.signals.priceScale('right').applyOptions({
-            autoScale: false,
-            scaleMargins: { top: 0, bottom: 0 }
+        autoScale: false,
+        scaleMargins: { top: 0.1, bottom: 0.1 },
+        axisLabelVisible: false, // Esto quita los números de precios (0, 18, 36...)
+        borderVisible: false
         });
         charts.signals.priceScale('right').setIntermediateTitles([]); // Limpiar números de precio
 
