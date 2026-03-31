@@ -111,7 +111,6 @@
         series.macd = charts.macd.addHistogramSeries({ base: 0 });
 
         update();
-        setInterval(update, 60000); // Sincroniza cada minuto
     }
 
     async function update() {
@@ -200,4 +199,7 @@
         document.getElementById('astro-list').innerHTML = h;
     }
 
-    window.onload = init
+    window.onload = init;
+</script>
+</body>
+</html>
