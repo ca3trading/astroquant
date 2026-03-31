@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASTRO-QUANT_OS // v2.6.4</title>
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <style>
         :root {
             --bg: #050505;
@@ -30,7 +31,6 @@
             box-sizing: border-box;
             overflow: hidden;
         }
-        /* Paneles Estilo Terminal */
         .panel {
             background: var(--panel);
             border: 1px solid var(--border);
@@ -54,22 +54,14 @@
         }
         h1 { margin: 0; font-size: 1.2rem; text-shadow: 0 0 5px var(--accent); }
         .price-big { font-size: 2.2rem; font-weight: bold; }
-
-        /* Gráfico */
         #chart-main { grid-column: 2 / 3; grid-row: 2 / 3; padding: 0; min-height: 0; }
-
-        /* Sidebar Astrología */
         .sidebar-left { grid-column: 1 / 2; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 10px; }
         .astro-item { 
             display: flex; justify-content: space-between; 
             border-bottom: 1px solid #1a1a1a; padding: 5px 0; font-size: 0.85rem;
         }
-        
-        /* Sidebar Indicadores */
         .sidebar-right { grid-column: 3 / 4; grid-row: 2 / 4; }
         .ind-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-
-        /* Consola de Logs Inferior */
         .console {
             grid-column: 2 / 3;
             grid-row: 3 / 4;
@@ -82,8 +74,6 @@
         }
         .log-entry { margin-bottom: 3px; }
         .log-time { color: #555; margin-right: 8px; }
-
-        /* Tags de Estado */
         .tag { padding: 2px 6px; font-size: 0.7rem; border: 1px solid var(--accent); border-radius: 3px; }
         .blink { animation: blinker 1.5s linear infinite; }
         @keyframes blinker { 50% { opacity: 0.3; } }
@@ -104,8 +94,7 @@
 
 <div class="sidebar-left panel">
     <h3 style="font-size: 0.9rem; border-bottom: 1px solid var(--accent);">GEOCENTRIC_POSITIONS</h3>
-    <div id="astro-list">
-        </div>
+    <div id="astro-list"></div>
 </div>
 
 <div id="chart-main" class="panel">
@@ -133,7 +122,8 @@
 
 <script>
     // --- CONFIGURACIÓN ---
-    const API_BASE = "https://astroquant.onrender.com/"; 
+    // Eliminamos la barra final para evitar URLs tipo //analisis
+    const API_BASE = "https://astroquant.onrender.com"; 
 
     // Inicializar Gráfico
     const chart = LightweightCharts.createChart(document.getElementById('tv-chart'), {
@@ -142,7 +132,8 @@
         timeScale: { borderColor: '#333', timeVisible: true },
     });
 
-    const candleSeries = chart.addCandlestickSeries({
+    // CORRECCIÓN: addCandlesticksSeries (con S) para la versión actual
+    const candleSeries = chart.addCandlesticksSeries({
         upColor: '#00ffcc', downColor: '#ff3e3e', borderVisible: false,
         wickUpColor: '#00ffcc', wickDownColor: '#ff3e3e'
     });
@@ -186,19 +177,24 @@
                 
                 // Velas
                 candleSeries.setData(candles.map(c => ({
-                    time: c.time / 1000, open: c.open, high: c.high, low: c.low, close: c.close
+                    time: c.time / 1000, 
+                    open: parseFloat(c.open), 
+                    high: parseFloat(c.high), 
+                    low: parseFloat(c.low), 
+                    close: parseFloat(c.close)
                 })));
 
                 // EMA 200
                 ema200Line.setData(candles.filter(c => c.ema200).map(c => ({
-                    time: c.time / 1000, value: c.ema200
+                    time: c.time / 1000, 
+                    value: parseFloat(c.ema200)
                 })));
 
                 // Actualizar Sidebar Derecha
-                document.getElementById('val-rsi').innerText = last.rsi.toFixed(2);
-                document.getElementById('val-willr').innerText = last.willr.toFixed(2);
+                document.getElementById('val-rsi').innerText = last.rsi ? last.rsi.toFixed(2) : "--";
+                document.getElementById('val-willr').innerText = last.willr ? last.willr.toFixed(2) : "--";
                 document.getElementById('val-ema200').innerText = last.ema200 > last.close ? "BEARISH" : "BULLISH";
-                document.getElementById('val-macd').innerText = last.macd_h.toFixed(2);
+                document.getElementById('val-macd').innerText = last.macd_h ? last.macd_h.toFixed(2) : "--";
                 
                 addLog(`DATA_SYNC COMPLETE: BTC @ ${data.btc_price}`);
             }
