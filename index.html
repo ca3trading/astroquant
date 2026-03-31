@@ -3,158 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASTRO-QUANT_OS // v2.6.4</title>
+    <title>ASTRO-QUANT_OS // v2.7.0</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <style>
         :root {
-            --bg: #050505; --panel: #0f0f0f; --accent: #00ffcc;
-            --text: #00ffcc; --dim: #008f7a; --bull: #00ffcc;
-            --bear: #ff3e3e; --border: #1a1a1a;
+            --bg: #050505; --panel: #0a0a0a; --accent: #00ffcc;
+            --text: #00ffcc; --dim: #008f7a; --border: #1a1a1a;
         }
         body {
             background: var(--bg); color: var(--text);
-            font-family: 'Courier New', monospace; margin: 0; padding: 15px;
-            display: grid; grid-template-columns: 320px 1fr 300px;
-            grid-template-rows: auto 1fr 180px; gap: 12px;
-            height: 100vh; box-sizing: border-box; overflow: hidden;
+            font-family: 'Courier New', monospace; margin: 0; padding: 10px;
+            display: grid; 
+            grid-template-columns: 350px 1fr 320px;
+            grid-template-rows: 80px 1fr 200px; 
+            gap: 10px; height: 100vh; box-sizing: border-box; overflow: hidden;
         }
-        .panel {
-            background: var(--panel); border: 1px solid var(--border);
-            padding: 12px; position: relative; overflow: hidden;
-        }
-        .panel::before {
-            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
-            background: var(--accent); box-shadow: 0 0 10px var(--accent);
-        }
-        .header { grid-column: 1 / 4; display: flex; justify-content: space-between; align-items: center; background: #000; }
-        h1 { margin: 0; font-size: 1.2rem; text-shadow: 0 0 5px var(--accent); }
-        .price-big { font-size: 2.2rem; font-weight: bold; }
-        #chart-main { grid-column: 2 / 3; grid-row: 2 / 3; padding: 0; min-height: 0; }
-        .sidebar-left { grid-column: 1 / 2; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 10px; }
-        .astro-item { display: flex; justify-content: space-between; border-bottom: 1px solid #1a1a1a; padding: 5px 0; font-size: 0.85rem; }
-        .sidebar-right { grid-column: 3 / 4; grid-row: 2 / 4; }
-        .ind-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .console { grid-column: 2 / 3; grid-row: 3 / 4; background: #000; font-size: 0.75rem; color: var(--dim); overflow-y: auto; padding: 8px; border: 1px solid #111; }
-        .log-entry { margin-bottom: 3px; }
-        .log-time { color: #555; margin-right: 8px; }
-        .tag { padding: 2px 6px; font-size: 0.7rem; border: 1px solid var(--accent); border-radius: 3px; }
-        .blink { animation: blinker 1.5s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0.3; } }
+        .panel { background: var(--panel); border: 1px solid var(--border); padding: 10px; position: relative; }
+        .panel::after { content: ""; position: absolute; top:0; left:0; width:100%; height:1px; background: var(--accent); opacity: 0.3; }
+        
+        /* Header */
+        .header { grid-column: 1 / 4; display: flex; justify-content: space-between; align-items: center; }
+        .price-main { font-size: 2.5rem; font-weight: bold; text-shadow: 0 0 10px var(--accent); }
+
+        /* Zodiac Chart */
+        .zodiac-container { grid-column: 1 / 2; grid-row: 2 / 3; display: flex; flex-direction: column; align-items: center; }
+        #zodiacChart { max-width: 100%; margin-top: 10px; }
+
+        /* Main Chart */
+        #chart-main { grid-column: 2 / 3; grid-row: 2 / 3; padding: 0; }
+
+        /* Tech Signals */
+        .signals { grid-column: 3 / 4; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 15px; }
+        .signal-card { border: 1px solid #222; padding: 10px; background: #000; }
+        .signal-val { font-size: 1.2rem; float: right; }
+        .buy { color: #00ffcc; } .sell { color: #ff3e3e; }
+
+        /* Console */
+        .console { grid-column: 1 / 3; grid-row: 3 / 4; background: #000; font-size: 0.7rem; color: var(--dim); overflow-y: auto; }
+        
+        h3 { font-size: 0.8rem; text-transform: uppercase; margin: 0 0 10px 0; border-bottom: 1px solid #222; padding-bottom: 5px; color: #fff; }
+        .tag { background: var(--accent); color: #000; padding: 2px 5px; font-size: 0.6rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="header panel">
     <div>
-        <h1>ASTRO-QUANT_OS <span class="tag">v2.6.4</span> <span id="status-dot" class="blink">●</span></h1>
-        <div id="connection-status" style="font-size: 0.7rem; margin-top:4px;">SYNC_STATE: INITIALIZING...</div>
+        <div class="tag">SYSTEM ACTIVE</div>
+        <div style="font-size: 1.2rem;">ASTRO-QUANT_OS <span style="color: #555;">v2.7.0</span></div>
     </div>
-    <div class="price-big" id="btc-price">$ --,---.--</div>
-    <div style="text-align: right;">
-        <div id="insight-display" style="font-size: 0.9rem; max-width: 300px; color: #fff;">ANALIZANDO CONFLUENCIA...</div>
-    </div>
+    <div class="price-main" id="price-display">$ --,---.--</div>
+    <div id="insight-box" style="max-width: 400px; font-size: 0.8rem; text-align: right; color: #fff;">BOOTING_CORE...</div>
 </div>
 
-<div class="sidebar-left panel">
-    <h3 style="font-size: 0.9rem; border-bottom: 1px solid var(--accent);">GEOCENTRIC_POSITIONS</h3>
-    <div id="astro-list"></div>
+<div class="zodiac-container panel">
+    <h3>Geocentric Radix</h3>
+    <canvas id="zodiacChart"></canvas>
+    <div id="astro-details" style="font-size: 0.75rem; margin-top: 15px; width: 100%;"></div>
 </div>
 
 <div id="chart-main" class="panel">
     <div id="tv-chart" style="width: 100%; height: 100%;"></div>
 </div>
 
-<div class="sidebar-right panel">
-    <h3 style="font-size: 0.9rem; border-bottom: 1px solid var(--accent);">TECHNICAL_SIGNALS</h3>
-    <div id="tech-list" style="margin-top: 15px;">
-        <div class="ind-row"><span>RSI (14)</span> <span id="val-rsi">--</span></div>
-        <div class="ind-row"><span>EMA 200</span> <span id="val-ema200">--</span></div>
-        <div class="ind-row"><span>WILLIAMS_R</span> <span id="val-willr">--</span></div>
-        <div class="ind-row"><span>MACD_HIST</span> <span id="val-macd">--</span></div>
+<div class="signals panel">
+    <h3>Market Intelligence</h3>
+    <div class="signal-card">
+        RSI (14) <span id="rsi-val" class="signal-val">--</span>
+    </div>
+    <div class="signal-card">
+        EMA 200 <span id="ema-status" class="signal-val">--</span>
+    </div>
+    <div class="signal-card">
+        MACD Hist <span id="macd-val" class="signal-val">--</span>
+    </div>
+    <div class="signal-card" style="border-color: var(--accent);">
+        POWER_SCORE <span id="power-score" class="signal-val" style="color: var(--accent);">--%</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="font-size: 0.6rem; color: #444;">
+        UPLINK: RENDER_CLOUD<br>
+        DATA: KUCOIN_PRO_FEED
     </div>
 </div>
 
-<div class="console panel" id="console-logs"></div>
+<div class="console panel" id="console-out"></div>
 
 <script>
-    const API_BASE = "https://astroquant.onrender.com"; 
-    let chart, candleSeries, ema200Line;
+    const API_BASE = "https://astroquant.onrender.com";
+    let chart, candleSeries, zodiacRadar;
 
-    function addLog(msg) {
-        const consoleDiv = document.getElementById('console-logs');
-        const now = new Date().toLocaleTimeString();
-        consoleDiv.innerHTML += `<div class="log-entry"><span class="log-time">[${now}]</span> ${msg}</div>`;
-        consoleDiv.scrollTop = consoleDiv.scrollHeight;
-    }
-
-    // Inicializar gráfico solo una vez
-    function initChart() {
-        const container = document.getElementById('tv-chart');
-        chart = LightweightCharts.createChart(container, {
-            layout: { background: { color: '#0f0f0f' }, textColor: '#00ffcc' },
-            grid: { vertLines: { color: '#1a1a1a' }, horzLines: { color: '#1a1a1a' } },
-            timeScale: { borderColor: '#333', timeVisible: true },
+    // 1. Inicializar Gráfico de Trading
+    function initTradingChart() {
+        chart = LightweightCharts.createChart(document.getElementById('tv-chart'), {
+            layout: { background: { color: '#0a0a0a' }, textColor: '#00ffcc' },
+            grid: { vertLines: { color: '#161616' }, horzLines: { color: '#161616' } },
+            timeScale: { timeVisible: true, borderColor: '#333' }
         });
         candleSeries = chart.addCandlestickSeries({
             upColor: '#00ffcc', downColor: '#ff3e3e', borderVisible: false,
             wickUpColor: '#00ffcc', wickDownColor: '#ff3e3e'
         });
-        ema200Line = chart.addLineSeries({ color: '#ff9f43', lineWidth: 1, title: 'EMA 200' });
-        addLog("CHART_ENGINE: LOADED_VERSION_3.8.0");
     }
 
-    async function fetchData() {
+    // 2. Inicializar Radar Zodiacal (Chart.js)
+    function initZodiac() {
+        const ctx = document.getElementById('zodiacChart').getContext('2d');
+        zodiacRadar = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Ari', 'Tau', 'Gem', 'Can', 'Leo', 'Vir', 'Lib', 'Sco', 'Sag', 'Cap', 'Aqu', 'Pis'],
+                datasets: [{
+                    label: 'Planet Power',
+                    data: new Array(12).fill(0),
+                    backgroundColor: 'rgba(0, 255, 204, 0.2)',
+                    borderColor: '#00ffcc',
+                    borderWidth: 1,
+                    pointBackgroundColor: '#fff'
+                }]
+            },
+            options: {
+                scales: {
+                    r: {
+                        angleLines: { color: '#222' },
+                        grid: { color: '#222' },
+                        pointLabels: { color: '#00ffcc', font: { size: 10 } },
+                        ticks: { display: false }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    function addLog(m) {
+        const c = document.getElementById('console-out');
+        c.innerHTML += `<div><span style="color:#444">[${new Date().toLocaleTimeString()}]</span> ${m}</div>`;
+        c.scrollTop = c.scrollHeight;
+    }
+
+    async function update() {
         try {
-            addLog("REQUESTING DATA FROM REMOTE_SERVER...");
             const [resA, resC] = await Promise.all([
                 fetch(`${API_BASE}/analisis`),
                 fetch(`${API_BASE}/candles-1h`)
             ]);
-
             const data = await resA.json();
             const candles = await resC.json();
 
-            document.getElementById('btc-price').innerText = `$ ${data.btc_price.toLocaleString()}`;
-            document.getElementById('insight-display').innerText = data.insight;
-            document.getElementById('connection-status').innerText = "SYNC_STATE: OK";
+            // UI
+            document.getElementById('price-display').innerText = `$ ${data.btc_price.toLocaleString()}`;
+            document.getElementById('insight-box').innerText = data.insight;
 
-            // Actualizar Astro
-            const astroList = document.getElementById('astro-list');
-            astroList.innerHTML = '';
-            for (const [p, pos] of Object.entries(data.astrology)) {
-                astroList.innerHTML += `<div class="astro-item"><span>${p.toUpperCase()}</span> <span>${pos}</span></div>`;
-            }
+            // Zodiac Logic
+            const planetValues = new Array(12).fill(0);
+            let astroHTML = "";
+            Object.entries(data.astrology).forEach(([p, pos], i) => {
+                const deg = parseFloat(pos);
+                const signIdx = Math.floor(deg / 30);
+                planetValues[signIdx] += 10; // Fuerza visual
+                astroHTML += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #111">
+                                <span>${p}</span><span>${pos}</span>
+                              </div>`;
+            });
+            zodiacRadar.data.datasets[0].data = planetValues;
+            zodiacRadar.update();
+            document.getElementById('astro-details').innerHTML = astroHTML;
 
-            // Actualizar Gráfico
-            if (candles && candles.length > 0) {
+            // Trading Chart
+            if(candles.length > 0) {
                 candleSeries.setData(candles.map(c => ({
-                    time: c.time / 1000, 
-                    open: parseFloat(c.open), high: parseFloat(c.high), 
-                    low: parseFloat(c.low), close: parseFloat(c.close)
+                    time: c.time/1000, open: c.open, high: c.high, low: c.low, close: c.close
                 })));
-
-                ema200Line.setData(candles.filter(c => c.ema200 > 0).map(c => ({
-                    time: c.time / 1000, value: parseFloat(c.ema200)
-                })));
-
-                const last = candles[candles.length - 1];
-                document.getElementById('val-rsi').innerText = last.rsi.toFixed(2);
-                document.getElementById('val-willr').innerText = last.willr.toFixed(2);
-                document.getElementById('val-ema200').innerText = last.ema200 > last.close ? "BEARISH" : "BULLISH";
-                document.getElementById('val-macd').innerText = last.macd_h.toFixed(2);
+                const last = candles[candles.length-1];
+                document.getElementById('rsi-val').innerText = last.rsi.toFixed(2);
+                document.getElementById('rsi-val').className = `signal-val ${last.rsi > 70 ? 'sell' : last.rsi < 30 ? 'buy' : ''}`;
+                document.getElementById('ema-status').innerText = last.close > last.ema200 ? "BULLISH" : "BEARISH";
+                document.getElementById('macd-val').innerText = last.macd_h.toFixed(2);
                 
-                addLog(`SYNC_COMPLETE: BTC @ ${data.btc_price}`);
+                // Power Score Inventado (RSI + EMA)
+                const score = Math.floor((last.rsi + (last.close > last.ema200 ? 50 : 0)) / 1.5);
+                document.getElementById('power-score').innerText = `${score}%`;
             }
-        } catch (e) {
-            addLog(`SYNC_ERROR: RECONNECTING...`);
-            document.getElementById('connection-status').innerText = "SYNC_STATE: ERROR";
+            addLog("CORE_SYNC: SUCCESSFUL");
+        } catch(e) {
+            addLog("CORE_SYNC: FAILED_RETRYING...");
         }
     }
 
-    initChart();
-    fetchData();
-    setInterval(fetchData, 30000);
+    initTradingChart();
+    initZodiac();
+    update();
+    setInterval(update, 30000);
 </script>
 </body>
 </html>
