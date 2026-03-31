@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ASTRO-QUANT_OS // v3.5.3 (Final Stable Piano Roll)</title>
+    <title>ASTRO-QUANT // ASTROLOGY TRADING BTC/USD SIGNALS CHART </title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         :root {
@@ -21,13 +21,17 @@
         .price-big { font-size: 3.5rem; color: var(--bull); font-weight: 900; letter-spacing: -2px; }
         .sidebar { grid-column: 1 / 2; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
         
-        /* Layout: Velas ultra altas (8fr) y Piano Roll (2fr) */
         .charts-container { 
             grid-column: 2 / 3; display: grid; 
             grid-template-rows: 2fr 8fr 1fr 1fr 1fr; gap: 10px; 
             overflow-y: auto; padding-right: 5px;
         }
         .chart-box { position: relative; min-height: 80px; }
+        .chart-title { 
+            position: absolute; top: 10px; left: 15px; z-index: 10;
+            font-size: 0.75rem; font-weight: bold; color: var(--accent);
+            text-transform: uppercase; letter-spacing: 1px; pointer-events: none;
+        }
         .astro-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a1e26; font-family: monospace; font-size: 0.9rem;}
     </style>
 </head>
@@ -35,11 +39,11 @@
 
 <div class="header panel">
     <div>
-        <h1 style="margin:0; font-size: 1.2rem; color: var(--accent); letter-spacing: 2px;">ASTRO-QUANT_OS <span style="color:#fff">// v3.5.3</span></h1>
-        <small style="color:#444;">STABLE_BUILD // PIANO_ROLL_ACTIVE</small>
+        <h1 style="margin:0; font-size: 1.2rem; color: var(--accent); letter-spacing: 2px;">ASTRO-QUANT_OS <span style="color:#fff">// v3.5.4</span></h1>
+        <small style="color:#444;">BTC/USD 1 HOUR ASTROLOGY CHART</small>
     </div>
     <div class="price-big" id="btc-price">$ 00,000</div>
-    <div id="insight-box" style="text-align: right; font-family: monospace; color: #888; font-size: 0.8rem; max-width: 300px;">SYSTEM_READY</div>
+    <div id="insight-box" style="text-align: right; font-family: monospace; color: #888; font-size: 0.8rem; max-width: 300px;">UPLINK_STABLE</div>
 </div>
 
 <div class="sidebar">
@@ -50,11 +54,29 @@
 </div>
 
 <div class="charts-container">
-    <div class="panel chart-box"><div id="chart-signals" style="height: 100%;"></div></div>
-    <div class="panel chart-box"><div id="chart-price" style="height: 100%;"></div></div>
-    <div class="panel chart-box"><div id="chart-osc" style="height: 100%;"></div></div>
-    <div class="panel chart-box"><div id="chart-macd" style="height: 100%;"></div></div>
-    <div class="panel chart-box"><div id="chart-ao" style="height: 100%;"></div></div>
+    <div class="panel chart-box">
+        <div class="chart-title">SIGNAL_TRACKS // PIANO_ROLL</div>
+        <div id="chart-signals" style="height: 100%;"></div>
+    </div>
+    
+    <div class="panel chart-box">
+        <div class="chart-title">BTC/USD 1 HOUR ASTROLOGY CHART</div>
+        <div id="chart-price" style="height: 100%;"></div>
+    </div>
+
+    <div class="panel chart-box">
+        <div class="chart-title">RSI & WILLIAMS %R</div>
+        <div id="chart-osc" style="height: 100%;"></div>
+    </div>
+
+    <div class="panel chart-box">
+        <div class="chart-title">MACD</div>
+        <div id="chart-macd" style="height: 100%;"></div>
+    </div>
+    <div class="panel chart-box">
+        <div class="chart-title">AWESOME_OSCILLATOR</div>
+        <div id="chart-ao" style="height: 100%;"></div>
+    </div>
 </div>
 
 <script>
@@ -69,22 +91,19 @@
             crosshair: { mode: 0, vertLine: { labelBackgroundColor: '#7d84ff' }, horzLine: { labelBackgroundColor: '#7d84ff' } }
         };
 
-        // 1. INICIALIZAR CHARTS
         charts.signals = LightweightCharts.createChart(document.getElementById('chart-signals'), {...theme, rightPriceScale: {visible: true}});
         charts.price = LightweightCharts.createChart(document.getElementById('chart-price'), theme);
         charts.osc = LightweightCharts.createChart(document.getElementById('chart-osc'), {...theme, leftPriceScale: {visible: true}});
         charts.macd = LightweightCharts.createChart(document.getElementById('chart-macd'), theme);
         charts.ao = LightweightCharts.createChart(document.getElementById('chart-ao'), theme);
 
-        // 2. CONFIGURAR PIANO ROLL (Tracks con Eje Y fijo)
         const laneStyle = { color: 'transparent', lastValueVisible: true, priceLineVisible: false };
-        series.laneRSI = charts.signals.addLineSeries({...laneStyle, title: 'RSI_TRACK'});
-        series.laneWILL = charts.signals.addLineSeries({...laneStyle, title: 'WILL%R_TRACK'});
-        series.laneMACD = charts.signals.addLineSeries({...laneStyle, title: 'MACD_TRACK'});
-        series.laneAO = charts.signals.addLineSeries({...laneStyle, title: 'AO_TRACK'});
+        series.laneRSI = charts.signals.addLineSeries({...laneStyle, title: 'RSI_TRK'});
+        series.laneWILL = charts.signals.addLineSeries({...laneStyle, title: 'WILL_TRK'});
+        series.laneMACD = charts.signals.addLineSeries({...laneStyle, title: 'MACD_TRK'});
+        series.laneAO = charts.signals.addLineSeries({...laneStyle, title: 'AO_TRK'});
         series.laneEMA = charts.signals.addLineSeries({...laneStyle, title: 'EMA_CROSS'});
 
-        // FIX: Reemplazo de setIntermediateTitles por axisLabelVisible
         charts.signals.priceScale('right').applyOptions({
             autoScale: false,
             scaleMargins: { top: 0.1, bottom: 0.1 },
@@ -92,7 +111,6 @@
             borderVisible: false
         });
 
-        // 3. SERIES DE PRECIO + BB + EMAs
         series.candles = charts.price.addCandlestickSeries({ upColor: '#00ffcc', downColor: '#ff3e3e', borderVisible: false });
         series.ema20 = charts.price.addLineSeries({ color: '#55EFC4', lineWidth: 1, title: 'EMA 20' });
         series.ema50 = charts.price.addLineSeries({ color: '#74b9ff', lineWidth: 1, title: 'EMA 50' });
@@ -100,19 +118,16 @@
         series.bbUpper = charts.price.addLineSeries({ color: 'rgba(255, 255, 255, 0.1)', lineWidth: 1, lineStyle: 2 });
         series.bbLower = charts.price.addLineSeries({ color: 'rgba(255, 255, 255, 0.1)', lineWidth: 1, lineStyle: 2 });
 
-        // 4. OSCILADORES
         series.rsi = charts.osc.addLineSeries({ color: '#7d84ff', lineWidth: 2, title: 'RSI' });
         series.willr = charts.osc.addLineSeries({ color: '#ff7675', lineWidth: 1, title: 'WILL %R', priceScaleId: 'left' });
         series.macd = charts.macd.addHistogramSeries({ base: 0, title: 'MACD' });
         series.ao = charts.ao.addHistogramSeries({ base: 0, title: 'AO' });
 
-        // --- SINCRONIZACIÓN TOTAL ---
         const chartKeys = Object.keys(charts);
         chartKeys.forEach(sK => {
             charts[sK].timeScale().subscribeVisibleLogicalRangeChange(range => {
                 chartKeys.forEach(tK => { if(sK !== tK) charts[tK].timeScale().setVisibleLogicalRange(range); });
             });
-            // Sincronizar el crosshair para mostrar la hora en todos los charts
             charts[sK].subscribeCrosshairMove(param => {
                 if (!param.time) return;
                 chartKeys.forEach(tK => { if(sK !== tK) charts[tK].setCrosshairPosition(param.price, param.time, series.candles); });
@@ -134,7 +149,6 @@
             document.getElementById('insight-box').innerText = data.analysis.insight;
 
             series.candles.setData(candles.map(c => ({ time: t(c), open: c.open, high: c.high, low: c.low, close: c.close })));
-            
             const fZ = (v) => v !== 0 && v !== undefined;
             series.ema20.setData(candles.filter(c => fZ(c.ema20)).map(c => ({ time: t(c), value: c.ema20 })));
             series.ema50.setData(candles.filter(c => fZ(c.ema50)).map(c => ({ time: t(c), value: c.ema50 })));
@@ -147,7 +161,6 @@
             series.macd.setData(candles.map(c => ({ time: t(c), value: c.macd_h, color: c.macd_h >= 0 ? '#00ffcc' : '#ff3e3e' })));
             series.ao.setData(candles.map(c => ({ time: t(c), value: c.ao, color: c.ao >= 0 ? '#00ffcc' : '#ff3e3e' })));
 
-            // --- PIANO ROLL LOGIC ---
             const rsiM = [], willM = [], macdM = [], aoM = [], emaM = [];
             const rsiD = [], willD = [], macdD = [], aoD = [], emaD = [];
 
@@ -203,11 +216,4 @@
     }
 
     function renderList(planets) {
-        let h = ''; Object.entries(planets).forEach(([n, p]) => { h += `<div class="astro-row"><span style="color:var(--accent)">${n.toUpperCase()}</span><span>${p}°</span></div>`; });
-        document.getElementById('astro-list').innerHTML = h;
-    }
-
-    window.onload = init;
-</script>
-</body>
-</html>
+        let h
