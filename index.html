@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ASTRO-QUANT_OS // v3.4.0 (Dedicated Signal Lanes)</title>
+    <title>ASTRO-QUANT_OS // v3.5.0 (Piano Roll Signals & High-Res Candles)</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         :root {
@@ -21,9 +21,10 @@
         .price-big { font-size: 3.5rem; color: var(--bull); font-weight: 900; letter-spacing: -2px; }
         .sidebar { grid-column: 1 / 2; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
         
+        /* Layout Actualizado: Gráfico de velas al DOBLE de alto (6fr) y Piano Roll (1.8fr) */
         .charts-container { 
             grid-column: 2 / 3; display: grid; 
-            grid-template-rows: 1.8fr 5fr 1fr 1fr 1fr; gap: 10px; 
+            grid-template-rows: 1.8fr 6fr 1fr 1fr 1fr; gap: 10px; 
             overflow-y: auto; padding-right: 5px;
         }
         .chart-box { position: relative; min-height: 100px; }
@@ -34,18 +35,20 @@
 
 <div class="header panel">
     <div>
-        <h1 style="margin:0; font-size: 1.2rem; color: var(--accent); letter-spacing: 2px;">ASTRO-QUANT_OS <span style="color:#fff">// v3.4.0</span></h1>
-        <small id="last-sync" style="color:#444;">MULTI_LANE_SIGNAL_OS_ACTIVE</small>
+        <h1 style="margin:0; font-size: 1.2rem; color: var(--accent); letter-spacing: 2px;">ASTRO-QUANT_OS <span style="color:#fff">// v3.5.0</span></h1>
+        <small id="last-sync" style="color:#444;">SYSTEM_SYNC_PIANO_ROLL_ACTIVE</small>
     </div>
     <div class="price-big" id="btc-price">$ 00,000</div>
-    <div id="insight-box" style="text-align: right; font-family: monospace; color: #888; font-size: 0.8rem; max-width: 300px;">CONFLUENCE_DETECTOR_ON</div>
+    <div id="insight-box" style="text-align: right; font-family: monospace; color: #888; font-size: 0.8rem; max-width: 300px;">CONFLUENCE_SEARCHING...</div>
 </div>
 
 <div class="sidebar">
     <div class="panel" style="height: 350px; display: flex; justify-content: center; align-items: center;">
         <canvas id="zodiacCanvas"></canvas>
     </div>
-    <div class="panel" id="astro-list" style="flex-grow: 1; overflow-y: auto;"></div>
+    <div class="panel astro-list" style="flex-grow: 1; overflow-y: auto;">
+        <div id="astro-list"></div>
+    </div>
 </div>
 
 <div class="charts-container">
@@ -75,14 +78,14 @@
         charts.macd = LightweightCharts.createChart(document.getElementById('chart-macd'), theme);
         charts.ao = LightweightCharts.createChart(document.getElementById('chart-ao'), theme);
 
-        // 2. CONFIGURAR SERIES DE SEÑALES (Carriles Dedicados)
-        // Usamos diferentes series para crear "carriles" virtuales en el eje Y
-        series.laneRSI = charts.signals.addLineSeries({ color: 'transparent', title: 'RSI', lastValueVisible: true });
-        series.laneWILL = charts.signals.addLineSeries({ color: 'transparent', title: 'WILL%R', lastValueVisible: true });
-        series.laneMACD = charts.signals.addLineSeries({ color: 'transparent', title: 'MACD', lastValueVisible: true });
-        series.laneAO = charts.signals.addLineSeries({ color: 'transparent', title: 'AO', lastValueVisible: true });
-        series.laneEMA = charts.signals.addLineSeries({ color: 'transparent', title: 'EMA_X', lastValueVisible: true });
+        // 2. CONFIGURAR PIANO ROLL DE SEÑALES (Tracks Dedicados)
+        series.laneRSI = charts.signals.addLineSeries({ color: 'transparent', title: 'RSI_X', lastValueVisible: true });
+        series.laneWILL = charts.signals.addLineSeries({ color: 'transparent', title: 'WILL%R_X', lastValueVisible: true });
+        series.laneMACD = charts.signals.addLineSeries({ color: 'transparent', title: 'MACD_X', lastValueVisible: true });
+        series.laneAO = charts.signals.addLineSeries({ color: 'transparent', title: 'AO_X', lastValueVisible: true });
+        series.laneEMA = charts.signals.addLineSeries({ color: 'transparent', title: 'EMA_CROSS', lastValueVisible: true });
 
+        // FIJAR ESCALA Y MÁRGENES PARA LOS TRACKS
         charts.signals.priceScale('right').applyOptions({ autoScale: false, scaleMargins: { top: 0.1, bottom: 0.1 } });
 
         // 3. SERIES DE PRECIO + BB + EMAs (v3.0 Logic)
@@ -99,7 +102,7 @@
         series.macd = charts.macd.addHistogramSeries({ base: 0, title: 'MACD' });
         series.ao = charts.ao.addHistogramSeries({ base: 0, title: 'AO' });
 
-        // SINCRONIZACIÓN TOTAL
+        // --- SINCRONIZACIÓN TOTAL (ZOOM, PANNING, MOUSE) ---
         const chartKeys = Object.keys(charts);
         chartKeys.forEach(sK => {
             charts[sK].timeScale().subscribeVisibleLogicalRangeChange(range => {
@@ -107,7 +110,8 @@
             });
             charts[sK].subscribeCrosshairMove(param => {
                 if (!param.time) return;
-                chartKeys.forEach(tK => { if(sK !== tK) charts[tK].setCrosshairPosition(param.price, param.time, series.candles); });
+                // Sincronizar crosshair basándonos en la hora y el track de señales
+                chartKeys.forEach(tK => { if(sK !== tK) charts[tK].setCrosshairPosition(param.price, param.time, series.laneRSI); });
             });
         });
 
@@ -125,8 +129,8 @@
             document.getElementById('btc-price').innerText = `$ ${data.analysis.btc_price.toLocaleString()}`;
             document.getElementById('insight-box').innerText = data.analysis.insight;
 
+            // Velas y EMAs (Filtrando 0s)
             series.candles.setData(candles.map(c => ({ time: t(c), open: c.open, high: c.high, low: c.low, close: c.close })));
-            
             const fZ = (v) => v !== 0 && v !== undefined;
             series.ema20.setData(candles.filter(c => fZ(c.ema20)).map(c => ({ time: t(c), value: c.ema20 })));
             series.ema50.setData(candles.filter(c => fZ(c.ema50)).map(c => ({ time: t(c), value: c.ema50 })));
@@ -134,23 +138,24 @@
             series.bbUpper.setData(candles.filter(c => fZ(c.bb_upper)).map(c => ({ time: t(c), value: c.bb_upper })));
             series.bbLower.setData(candles.filter(c => fZ(c.bb_lower)).map(c => ({ time: t(c), value: c.bb_lower })));
 
+            // Osciladores
             series.rsi.setData(candles.map(c => ({ time: t(c), value: c.rsi })));
             series.willr.setData(candles.map(c => ({ time: t(c), value: c.willr })));
             series.macd.setData(candles.map(c => ({ time: t(c), value: c.macd_h, color: c.macd_h >= 0 ? '#00ffcc' : '#ff3e3e' })));
             series.ao.setData(candles.map(c => ({ time: t(c), value: c.ao, color: c.ao >= 0 ? '#00ffcc' : '#ff3e3e' })));
 
-            // --- SEÑALES POR CARRIL (LANE SYSTEM) ---
+            // --- LÓGICA DE SEÑALES PIANO ROLL (Tracks Independientes) ---
             const rsiM = [], willM = [], macdM = [], aoM = [], emaM = [];
             const rsiD = [], willD = [], macdD = [], aoD = [], emaD = [];
 
             candles.forEach((c, i) => {
                 const time = t(c);
-                // Valores fijos para posicionar las etiquetas en el gráfico
-                rsiD.push({ time: time, value: 80 });
-                willD.push({ time: time, value: 65 });
-                macdD.push({ time: time, value: 50 });
-                aoD.push({ time: time, value: 35 });
-                emaD.push({ time: time, value: 20 });
+                // Valores fijos para posicionar las etiquetas en el gráfico superior
+                rsiD.push({ time: time, value: 80 });   // Track superior
+                willD.push({ time: time, value: 65 });  // Track 2
+                macdD.push({ time: time, value: 50 });  // Track central
+                aoD.push({ time: time, value: 35 });    // Track 4
+                emaD.push({ time: time, value: 20 });   // Track inferior
 
                 // Señal RSI
                 if (c.rsi < 30) rsiM.push({ time: time, position: 'inBar', color: '#00ffcc', shape: 'circle', text: 'RSI_LOW' });
@@ -170,15 +175,17 @@
                 if (i > 0 && candles[i-1].close < candles[i-1].ema20 && c.close > c.ema20) emaM.push({ time: time, position: 'inBar', color: '#7d84ff', shape: 'arrowUp', text: 'EMA_CROSS' });
             });
 
+            // Asignar datos y marcadores a cada track
             series.laneRSI.setData(rsiD); series.laneRSI.setMarkers(rsiM);
             series.laneWILL.setData(willD); series.laneWILL.setMarkers(willM);
             series.laneMACD.setData(macdD); series.laneMACD.setMarkers(macdM);
             series.laneAO.setData(aoD); series.laneAO.setMarkers(aoM);
             series.laneEMA.setData(emaD); series.laneEMA.setMarkers(emaM);
 
+            // Astronomía
             drawZodiac(data.analysis.astrology);
             renderList(data.analysis.astrology);
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Update Fail:", e); }
     }
 
     function drawZodiac(planets) {
@@ -188,7 +195,7 @@
         canvas.width = 300; canvas.height = 300;
         const pConf = { 'Sun': { g: '☉', c: '#FFD700', s: 28 }, 'Moon': { g: '☽', c: '#FFFFFF', s: 24 }, 'Mars': { g: '♂', c: '#FF4B4B', s: 22 }, 'Jupiter': { g: '♃', c: '#7d84ff', s: 22 }, 'Saturn': { g: '♄', c: '#888888', s: 22 }, 'Venus': { g: '♀', c: '#00ffcc', s: 22 }, 'Mercury': { g: '☿', c: '#FAB1A0', s: 22 } };
         const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
-        ctx.clearRect(0, 0, 300, 300); ctx.strokeStyle = '#2a2e39';
+        ctx.clearRect(0, 0, 300, 300); ctx.strokeStyle = '#2a2e39'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(cx, cy, rIn, 0, Math.PI * 2); ctx.stroke();
         ctx.beginPath(); ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.stroke();
         for(let i=0; i<12; i++) {
