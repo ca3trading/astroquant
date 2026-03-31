@@ -128,46 +128,76 @@
         aoSeries = LightweightCharts.createChart(document.getElementById('chart-ao'), cfg).addHistogramSeries();
     }
 
-    function drawZodiac(planets) {
+function drawZodiac(planets) {
         const canvas = document.getElementById('zodiacCanvas');
         const ctx = canvas.getContext('2d');
         canvas.width = 300; canvas.height = 300;
-        const cx = 150, cy = 150, rInner = 100, rOuter = 130;
+        const cx = 150, cy = 150, rInner = 95, rOuter = 135;
 
+        // Configuración de Glifos
         const pConf = {
-            'Sun': { g: '☉', c: '#FFD700', s: 20 }, 'Moon': { g: '☽', c: '#FFFFFF', s: 18 },
-            'Mars': { g: '♂', c: '#FF3E3E', s: 17 }, 'Jupiter': { g: '♃', c: '#7D84FF', s: 17 },
-            'Saturn': { g: '♄', c: '#888888', s: 17 }, 'Venus': { g: '♀', c: '#00FFCC', s: 17 },
-            'Mercury': { g: '☿', c: '#FFA500', s: 17 }
+            'Sun': { g: '☉', c: '#FFD700', s: 22 }, 
+            'Moon': { g: '☽', c: '#FFFFFF', s: 19 },
+            'Mars': { g: '♂', c: '#FF3E3E', s: 18 }, 
+            'Jupiter': { g: '♃', c: '#7D84FF', s: 18 },
+            'Saturn': { g: '♄', c: '#888888', s: 18 }, 
+            'Venus': { g: '♀', c: '#00FFCC', s: 18 },
+            'Mercury': { g: '☿', c: '#FFA500', s: 18 }
         };
 
+        // Nombres de las casas/signos en Inglés
+        const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
+
         ctx.clearRect(0, 0, 300, 300);
+        
+        // 1. Dibujar Anillos Base
         ctx.strokeStyle = '#2a2e39';
+        ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(cx, cy, rInner, 0, Math.PI*2); ctx.stroke();
         ctx.beginPath(); ctx.arc(cx, cy, rOuter, 0, Math.PI*2); ctx.stroke();
 
-        // Divisiones Zodiacales
+        // 2. Dibujar Divisiones y Labels de los Signos
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
         for(let i=0; i<12; i++) {
-            let a = (i*30 - 180) * Math.PI/180;
+            // Ángulo de la línea divisoria (Aries empieza a las 9 en punto / 180°)
+            let angleLine = (i * 30 - 180) * Math.PI / 180;
             ctx.beginPath();
-            ctx.moveTo(cx + rInner*Math.cos(a), cy + rInner*Math.sin(a));
-            ctx.lineTo(cx + rOuter*Math.cos(a), cy + rOuter*Math.sin(a));
+            ctx.moveTo(cx + rInner * Math.cos(angleLine), cy + rInner * Math.sin(angleLine));
+            ctx.lineTo(cx + rOuter * Math.cos(angleLine), cy + rOuter * Math.sin(angleLine));
             ctx.stroke();
+
+            // Ángulo para el Texto (Centro de la casa, +15 grados desde la línea)
+            let angleText = (i * 30 - 165) * Math.PI / 180;
+            ctx.save();
+            ctx.translate(cx + (rOuter - 12) * Math.cos(angleText), cy + (rOuter - 12) * Math.sin(angleText));
+            ctx.rotate(angleText + Math.PI/2); // Rota el texto para que siga el círculo
+            ctx.font = 'bold 9px Inter, sans-serif';
+            ctx.fillStyle = '#4a4e59';
+            ctx.fillText(signs[i], 0, 0);
+            ctx.restore();
         }
 
-        // Planetas
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        // 3. Posicionar Planetas con Glifos
         Object.entries(planets).forEach(([name, pos]) => {
             const deg = parseFloat(pos);
             const angle = (deg - 180) * (Math.PI / 180);
-            const x = cx + (rInner + 15) * Math.cos(angle);
-            const y = cy + (rInner + 15) * Math.sin(angle);
+            
+            // Los planetas flotan justo dentro del anillo de los signos
+            const x = cx + (rInner - 18) * Math.cos(angle);
+            const y = cy + (rInner - 18) * Math.sin(angle);
+            
             const c = pConf[name] || { g: '●', c: '#444', s: 12 };
             
-            ctx.font = `${c.s}px Arial`; ctx.fillStyle = c.c;
-            ctx.shadowBlur = 10; ctx.shadowColor = c.c;
-            ctx.fillText(c.g, x, y); ctx.shadowBlur = 0;
+            ctx.font = `${c.s}px Arial`; 
+            ctx.fillStyle = c.c;
+            ctx.shadowBlur = 10; 
+            ctx.shadowColor = c.c;
+            ctx.fillText(c.g, x, y); 
+            ctx.shadowBlur = 0;
         });
+    }
     }
 
     async function sync() {
