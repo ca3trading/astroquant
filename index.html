@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>ASTRO-QUANT_OS // v2.9.2 (Recovery)</title>
+    <title>ASTRO-QUANT_OS // v2.9.5</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
         :root {
@@ -18,43 +18,35 @@
         }
         .panel { background: var(--panel); border-radius: 12px; border: 1px solid #1e222d; padding: 20px; position: relative; }
         
-        /* Header Exact v2.6.4 Style */
         .header { grid-column: 1 / 3; display: flex; justify-content: space-between; align-items: center; padding: 10px 25px; }
         .price-big { font-size: 3rem; color: var(--bull); font-weight: 900; letter-spacing: -2px; text-shadow: 0 0 20px rgba(0,255,204,0.3); }
 
-        /* Sidebar & Large Zodiac */
         .sidebar { grid-column: 1 / 2; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
-        .carta-natal { height: 400px; display: flex; justify-content: center; align-items: center; }
-        #zodiacCanvas { width: 330px; height: 330px; }
-
-        /* Charts Container */
+        .carta-natal { height: 350px; display: flex; justify-content: center; align-items: center; }
+        
         .charts-container { 
             grid-column: 2 / 3; display: grid; 
-            grid-template-rows: 2fr 1fr 1fr; gap: 15px; 
+            grid-template-rows: 2fr 1fr 1fr 1fr; gap: 15px; 
             overflow-y: auto; padding-right: 5px;
         }
-        .chart-box { position: relative; min-height: 200px; }
+        .chart-box { position: relative; min-height: 150px; }
         .chart-label { 
             position: absolute; top: 12px; left: 15px; z-index: 10; 
             font-size: 0.7rem; color: #888; font-weight: bold; text-transform: uppercase;
         }
-
-        /* Astro List */
-        .astro-list { font-size: 0.9rem; font-family: monospace; }
-        .astro-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a1e26; }
+        .astro-list { font-size: 0.8rem; font-family: monospace; flex-grow: 1; }
+        .astro-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1a1e26; }
     </style>
 </head>
 <body>
 
 <div class="header panel">
     <div>
-        <h1 style="margin:0; font-size: 1.1rem; color: var(--accent); letter-spacing: 2px;">ASTRO-QUANT_OS <span style="color:#fff">// v2.9.2</span></h1>
+        <h1 style="margin:0; font-size: 1.1rem; color: var(--accent); letter-spacing: 2px;">ASTRO-QUANT_OS <span style="color:#fff">// v2.9.5</span></h1>
         <small id="last-sync" style="color:#444; text-transform: uppercase;">UPLINK_ACTIVE // DROPBOX_SYNC</small>
     </div>
     <div class="price-big" id="btc-price">$ 00,000</div>
-    <div id="insight-box" style="text-align: right; font-family: monospace; color: #aaa; font-size: 0.8rem; max-width: 300px;">
-        CONFLUENCE_SEARCHING...
-    </div>
+    <div id="insight-box" style="text-align: right; font-family: monospace; color: #aaa; font-size: 0.8rem; max-width: 300px;">CONFLUENCE_SEARCHING...</div>
 </div>
 
 <div class="sidebar">
@@ -62,31 +54,33 @@
         <div class="chart-label">CARTA NATAL DEL MERCADO</div>
         <canvas id="zodiacCanvas"></canvas>
     </div>
-    <div class="panel astro-list" style="flex-grow:1">
-        <div style="color:#555; margin-bottom:10px; font-size: 0.8rem;">PLANETARY_POSITIONS</div>
+    <div class="panel astro-list">
+        <div style="color:#555; margin-bottom:10px; font-size: 0.7rem;">PLANETARY_POSITIONS</div>
         <div id="astro-list"></div>
     </div>
 </div>
 
 <div class="charts-container">
     <div class="panel chart-box">
-        <div class="chart-label">BTC/USDT 1H - Señales de Confluencia</div>
+        <div class="chart-label">BTC/USDT 1H - BB & EMAs (20, 50, 200)</div>
         <div id="chart-price" style="height: 100%;"></div>
     </div>
     <div class="panel chart-box">
-        <div class="chart-label">RSI (14)</div>
+        <div class="chart-label">RSI (14) & Williams %R</div>
         <div id="chart-rsi" style="height: 100%;"></div>
     </div>
     <div class="panel chart-box">
         <div class="chart-label">MACD (12, 26, 9)</div>
         <div id="chart-macd" style="height: 100%;"></div>
     </div>
+    <div class="panel chart-box">
+        <div class="chart-label">Awesome Oscillator (AO)</div>
+        <div id="chart-ao" style="height: 100%;"></div>
+    </div>
 </div>
 
 <script>
-    // CAMBIA ESTO POR TU URL DE DROPBOX CON rlkey y raw=1
     const DATA_URL = "https://dl.dropboxusercontent.com/scl/fi/yerm8atcnk78rcdfq7ihp/astro_data.json?rlkey=ealnhng58twb9y7ipeeek725k&st=pd3zmfzx&raw=1"; 
-    
     let charts = {}, series = {};
 
     function init() {
@@ -97,147 +91,127 @@
             crosshair: { mode: 0 }
         };
 
-        // Chart 1: Price
+        // 1. Chart Precio: Velas + EMAs + Bollinger
         charts.price = LightweightCharts.createChart(document.getElementById('chart-price'), theme);
         series.candles = charts.price.addCandlestickSeries({ upColor: '#00ffcc', downColor: '#ff3e3e', borderVisible: false, wickUpColor: '#00ffcc', wickDownColor: '#ff3e3e' });
-        series.ema = charts.price.addLineSeries({ color: '#ff9f43', lineWidth: 1.5, priceScaleId: 'right' }); // EMA 200
+        
+        series.ema20 = charts.price.addLineSeries({ color: '#55EFC4', lineWidth: 1 });
+        series.ema50 = charts.price.addLineSeries({ color: '#74b9ff', lineWidth: 1 });
+        series.ema200 = charts.price.addLineSeries({ color: '#ff9f43', lineWidth: 2 });
+        
+        series.bbUpper = charts.price.addLineSeries({ color: 'rgba(255, 255, 255, 0.15)', lineWidth: 1, lineStyle: 2 });
+        series.bbLower = charts.price.addLineSeries({ color: 'rgba(255, 255, 255, 0.15)', lineWidth: 1, lineStyle: 2 });
 
-        // Chart 2: RSI
+        // 2. Chart RSI + Williams %R
         charts.rsi = LightweightCharts.createChart(document.getElementById('chart-rsi'), theme);
         series.rsi = charts.rsi.addLineSeries({ color: '#7d84ff', lineWidth: 2 });
+        series.willr = charts.rsi.addLineSeries({ color: '#ff7675', lineWidth: 1 });
 
-        // Chart 3: MACD
+        // 3. Chart MACD
         charts.macd = LightweightCharts.createChart(document.getElementById('chart-macd'), theme);
         series.macd = charts.macd.addHistogramSeries({ base: 0 });
 
+        // 4. Chart AO
+        charts.ao = LightweightCharts.createChart(document.getElementById('chart-ao'), theme);
+        series.ao = charts.ao.addHistogramSeries({ base: 0 });
+
         update();
+        setInterval(update, 60000);
     }
 
     async function update() {
         try {
             const res = await fetch(DATA_URL, { cache: "no-store" });
             const data = await res.json();
+            const candles = data.candles;
+            const t = c => c.time / 1000;
 
-            // 1. Header & Insight
+            // UI Updates
             document.getElementById('btc-price').innerText = `$ ${data.analysis.btc_price.toLocaleString()}`;
             document.getElementById('insight-box').innerText = data.analysis.insight;
             document.getElementById('last-sync').innerText = `UPLINK_ACTIVE // ${new Date(data.analysis.timestamp).toLocaleTimeString()}`;
 
-            // 2. Gráficos - Velas
-            const cData = data.candles.map(c => ({
-                time: c.time / 1000, open: c.open, high: c.high, low: c.low, close: c.close
-            }));
-            series.candles.setData(cData);
+            // Data Updates
+            series.candles.setData(candles.map(c => ({ time: t(c), open: c.open, high: c.high, low: c.low, close: c.close })));
             
-            // 3. Gráficos - EMA (Crítico: Filtrar ceros iniciales)
-            const validEma = data.candles.filter(c => c.ema200 !== 0);
-            if (validEma.length > 0) {
-                series.ema.setData(validEma.map(c => ({ time: c.time/1000, value: c.ema200 })));
-            }
+            // EMAs & Bollinger (Filtrado de seguridad para evitar caídas a 0)
+            series.ema20.setData(candles.filter(c => c.ema20 > 0).map(c => ({ time: t(c), value: c.ema20 })));
+            series.ema50.setData(candles.filter(c => c.ema50 > 0).map(c => ({ time: t(c), value: c.ema50 })));
+            series.ema200.setData(candles.filter(c => c.ema200 > 0).map(c => ({ time: t(c), value: c.ema200 })));
+            series.bbUpper.setData(candles.filter(c => c.bb_upper > 0).map(c => ({ time: t(c), value: c.bb_upper })));
+            series.bbLower.setData(candles.filter(c => c.bb_lower > 0).map(c => ({ time: t(c), value: c.bb_lower })));
 
-            // 4. Gráficos - RSI & MACD
-            series.rsi.setData(data.candles.map(c => ({ time: c.time/1000, value: c.rsi })));
-            series.macd.setData(data.candles.map(c => ({ 
-                time: c.time/1000, 
-                value: c.macd_h, 
-                color: c.macd_h >= 0 ? '#00ffcc' : '#ff3e3e' 
+            // Osciladores
+            series.rsi.setData(candles.map(c => ({ time: t(c), value: c.rsi })));
+            series.willr.setData(candles.map(c => ({ time: t(c), value: c.willr })));
+            
+            series.macd.setData(candles.map(c => ({ 
+                time: t(c), value: c.macd_h, color: c.macd_h >= 0 ? '#00ffcc' : '#ff3e3e' 
+            })));
+            series.ao.setData(candles.map(c => ({ 
+                time: t(c), value: c.ao, color: c.ao >= 0 ? '#00ffcc' : '#ff3e3e' 
             })));
 
-            // 5. Astronomía
             drawZodiac(data.analysis.astrology);
             renderList(data.analysis.astrology);
-
-        } catch (e) { console.error("Sync Error:", e); }
+        } catch (e) { console.error("Update Error:", e); }
     }
 
-function drawZodiac(planets) {
-    const canvas = document.getElementById('zodiacCanvas');
-    const ctx = canvas.getContext('2d');
-    const cx = 150, cy = 150; // Centro
-    const rIn = 70, rOut = 100, rText = 125; // Radios (Interior, Exterior, Texto)
-    canvas.width = 300; canvas.height = 300;
-
-    // Configuración estética (Colores y Glifos de tu diseño original)
-    const pConf = {
-        'Sun': { g: '☉', c: '#FFD700', s: 26 }, // Sol Amarillo Brillante
-        'Moon': { g: '☽', c: '#FFFFFF', s: 22 }, // Luna Blanca
-        'Mars': { g: '♂', c: '#FF4B4B', s: 20 }, // Marte Rojo
-        'Jupiter': { g: '♃', c: '#7d84ff', s: 19 },
-        'Saturn': { g: '♄', c: '#888888', s: 19 },
-        'Venus': { g: '♀', c: '#00ffcc', s: 20 }, // Venus Cian/Verde
-        'Mercury': { g: '☿', c: '#FAB1A0', s: 20 }
-    };
-
-    const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
-
-    ctx.clearRect(0, 0, 300, 300);
-    
-    // --- 1. Fondo Minimalista (Círculos) ---
-    ctx.strokeStyle = '#1e222d'; // Color oscuro sutil
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(cx, cy, rIn, 0, Math.PI * 2); ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.stroke();
-
-    // --- 2. Divisiones de Casas y Nombres de Signos (Look Profesional) ---
-    for(let i=0; i<12; i++) {
-        // CORRECCIÓN DE ÁNGULO: 0° Aries a la IZQUIERDA (Tradicional)
-        let aBase = i * 30 + 180; 
-        let aLine = (aBase) * Math.PI / 180;
-        let aText = (aBase + 15) * Math.PI / 180; // Texto en el centro del signo
-
-        // Línea divisoria
-        ctx.beginPath();
-        ctx.moveTo(cx + rIn * Math.cos(aLine), cy + rIn * Math.sin(aLine));
-        ctx.lineTo(cx + rOut * Math.cos(aLine), cy + rOut * Math.sin(aLine));
-        ctx.stroke();
-
-        // Nombre del Signo (Rotado y en el anillo)
-        ctx.save();
-        ctx.translate(cx + (rOut - 10) * Math.cos(aText), cy + (rOut - 10) * Math.sin(aText));
-        ctx.rotate(aText + Math.PI / 2); // Rotación vertical
-        ctx.font = 'bold 8px Inter, sans-serif'; 
-        ctx.fillStyle = '#444'; // Gris oscuro sutil
-        ctx.textAlign = 'center'; 
-        ctx.fillText(signs[i], 0, 0);
-        ctx.restore();
-    }
-
-    // --- 3. Planetas Dinámicos con Efecto Brillo (Neón) ---
-    Object.entries(planets).forEach(([name, pos]) => {
-        // CORRECCIÓN DE ÁNGULO: Ajustar al 0° de Aries a la izquierda
-        const angle = (parseFloat(pos) + 180) * Math.PI / 180;
-        const conf = pConf[name] || { g: '●', c: '#7d84ff', s: 16 };
-        
-        // Coordenadas para el planeta (entre rIn y rOut)
-        const pr = rIn + 15;
-        const x = cx + pr * Math.cos(angle);
-        const y = cy + pr * Math.sin(angle);
-
-        // A. Brillo (Glow)
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = conf.c;
-        ctx.fillStyle = conf.c;
-        
-        // B. Glifo (Agrandado)
-        ctx.font = `${conf.s}px Arial, sans-serif`; 
-        ctx.textAlign = 'center'; 
-        ctx.textBaseline = 'middle';
-        ctx.fillText(conf.g, x, y);
-        ctx.shadowBlur = 0; // Reset sombra
-
-        // C. Nombre debajo (Pequeño)
-        ctx.font = '7px Inter, sans-serif'; 
-        ctx.fillStyle = '#666'; // Gris sutil
-        ctx.fillText(name.toUpperCase(), x, y + 14);
-    });
-}
-
+    // [Aquí irían tus funciones drawZodiac y renderList tal cual las tenías]
     function renderList(planets) {
         let h = '';
         Object.entries(planets).forEach(([n, p]) => {
             h += `<div class="astro-row"><span style="color:var(--accent)">${n.toUpperCase()}</span><span>${p}°</span></div>`;
         });
         document.getElementById('astro-list').innerHTML = h;
+    }
+
+    function drawZodiac(planets) {
+        const canvas = document.getElementById('zodiacCanvas');
+        const ctx = canvas.getContext('2d');
+        const cx = 150, cy = 150, rIn = 70, rOut = 100;
+        canvas.width = 300; canvas.height = 300;
+        const pConf = {
+            'Sun': { g: '☉', c: '#FFD700', s: 26 }, 'Moon': { g: '☽', c: '#FFFFFF', s: 22 },
+            'Mars': { g: '♂', c: '#FF4B4B', s: 20 }, 'Jupiter': { g: '♃', c: '#7d84ff', s: 19 },
+            'Saturn': { g: '♄', c: '#888888', s: 19 }, 'Venus': { g: '♀', c: '#00ffcc', s: 20 },
+            'Mercury': { g: '☿', c: '#FAB1A0', s: 20 }
+        };
+        const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
+
+        ctx.clearRect(0, 0, 300, 300);
+        ctx.strokeStyle = '#1e222d'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx, cy, rIn, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, rOut, 0, Math.PI * 2); ctx.stroke();
+
+        for(let i=0; i<12; i++) {
+            let aBase = i * 30 + 180; 
+            let aLine = aBase * Math.PI / 180;
+            let aText = (aBase + 15) * Math.PI / 180;
+            ctx.beginPath();
+            ctx.moveTo(cx + rIn * Math.cos(aLine), cy + rIn * Math.sin(aLine));
+            ctx.lineTo(cx + rOut * Math.cos(aLine), cy + rOut * Math.sin(aLine));
+            ctx.stroke();
+            ctx.save();
+            ctx.translate(cx + (rOut - 10) * Math.cos(aText), cy + (rOut - 10) * Math.sin(aText));
+            ctx.rotate(aText + Math.PI / 2);
+            ctx.font = 'bold 8px Inter, sans-serif'; ctx.fillStyle = '#444'; ctx.textAlign = 'center';
+            ctx.fillText(signs[i], 0, 0);
+            ctx.restore();
+        }
+
+        Object.entries(planets).forEach(([name, pos]) => {
+            const angle = (parseFloat(pos) + 180) * Math.PI / 180;
+            const conf = pConf[name] || { g: '●', c: '#7d84ff', s: 16 };
+            const x = cx + (rIn + 15) * Math.cos(angle);
+            const y = cy + (rIn + 15) * Math.sin(angle);
+            ctx.shadowBlur = 15; ctx.shadowColor = conf.c; ctx.fillStyle = conf.c;
+            ctx.font = `${conf.s}px Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(conf.g, x, y);
+            ctx.shadowBlur = 0;
+            ctx.font = '7px Inter, sans-serif'; ctx.fillStyle = '#666';
+            ctx.fillText(name.toUpperCase(), x, y + 14);
+        });
     }
 
     window.onload = init;
