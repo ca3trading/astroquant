@@ -4,74 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASTRO-QUANT_OS // v2.6.4</title>
-    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <style>
         :root {
-            --bg: #050505;
-            --panel: #0f0f0f;
-            --accent: #00ffcc;
-            --text: #00ffcc;
-            --dim: #008f7a;
-            --bull: #00ffcc;
-            --bear: #ff3e3e;
-            --border: #1a1a1a;
+            --bg: #050505; --panel: #0f0f0f; --accent: #00ffcc;
+            --text: #00ffcc; --dim: #008f7a; --bull: #00ffcc;
+            --bear: #ff3e3e; --border: #1a1a1a;
         }
         body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Courier New', monospace;
-            margin: 0;
-            padding: 15px;
-            display: grid;
-            grid-template-columns: 320px 1fr 300px;
-            grid-template-rows: auto 1fr 180px;
-            gap: 12px;
-            height: 100vh;
-            box-sizing: border-box;
-            overflow: hidden;
+            background: var(--bg); color: var(--text);
+            font-family: 'Courier New', monospace; margin: 0; padding: 15px;
+            display: grid; grid-template-columns: 320px 1fr 300px;
+            grid-template-rows: auto 1fr 180px; gap: 12px;
+            height: 100vh; box-sizing: border-box; overflow: hidden;
         }
         .panel {
-            background: var(--panel);
-            border: 1px solid var(--border);
-            padding: 12px;
-            position: relative;
-            overflow: hidden;
+            background: var(--panel); border: 1px solid var(--border);
+            padding: 12px; position: relative; overflow: hidden;
         }
         .panel::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 2px;
-            background: var(--accent);
-            box-shadow: 0 0 10px var(--accent);
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--accent); box-shadow: 0 0 10px var(--accent);
         }
-        .header {
-            grid-column: 1 / 4;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #000;
-        }
+        .header { grid-column: 1 / 4; display: flex; justify-content: space-between; align-items: center; background: #000; }
         h1 { margin: 0; font-size: 1.2rem; text-shadow: 0 0 5px var(--accent); }
         .price-big { font-size: 2.2rem; font-weight: bold; }
         #chart-main { grid-column: 2 / 3; grid-row: 2 / 3; padding: 0; min-height: 0; }
         .sidebar-left { grid-column: 1 / 2; grid-row: 2 / 4; display: flex; flex-direction: column; gap: 10px; }
-        .astro-item { 
-            display: flex; justify-content: space-between; 
-            border-bottom: 1px solid #1a1a1a; padding: 5px 0; font-size: 0.85rem;
-        }
+        .astro-item { display: flex; justify-content: space-between; border-bottom: 1px solid #1a1a1a; padding: 5px 0; font-size: 0.85rem; }
         .sidebar-right { grid-column: 3 / 4; grid-row: 2 / 4; }
         .ind-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .console {
-            grid-column: 2 / 3;
-            grid-row: 3 / 4;
-            background: #000;
-            font-size: 0.75rem;
-            color: var(--dim);
-            overflow-y: auto;
-            padding: 8px;
-            border: 1px solid #111;
-        }
+        .console { grid-column: 2 / 3; grid-row: 3 / 4; background: #000; font-size: 0.75rem; color: var(--dim); overflow-y: auto; padding: 8px; border: 1px solid #111; }
         .log-entry { margin-bottom: 3px; }
         .log-time { color: #555; margin-right: 8px; }
         .tag { padding: 2px 6px; font-size: 0.7rem; border: 1px solid var(--accent); border-radius: 3px; }
@@ -105,40 +69,17 @@
     <h3 style="font-size: 0.9rem; border-bottom: 1px solid var(--accent);">TECHNICAL_SIGNALS</h3>
     <div id="tech-list" style="margin-top: 15px;">
         <div class="ind-row"><span>RSI (14)</span> <span id="val-rsi">--</span></div>
-        <div class="ind-row"><span>EMA 20/50</span> <span id="val-ema-cross">--</span></div>
         <div class="ind-row"><span>EMA 200</span> <span id="val-ema200">--</span></div>
         <div class="ind-row"><span>WILLIAMS_R</span> <span id="val-willr">--</span></div>
         <div class="ind-row"><span>MACD_HIST</span> <span id="val-macd">--</span></div>
     </div>
-    <div style="margin-top: 20px; font-size: 0.7rem; color: #555; border-top: 1px solid #222; padding-top: 10px;">
-        ENGINE: RENDER_CLOUD_PY<br>
-        UPDATE_FREQ: 30s
-    </div>
 </div>
 
-<div class="console panel" id="console-logs">
-    <div class="log-entry"><span class="log-time">[00:00:00]</span> SYSTEM BOOT SEQUENCE INITIATED...</div>
-</div>
+<div class="console panel" id="console-logs"></div>
 
 <script>
-    // --- CONFIGURACIÓN ---
-    // Eliminamos la barra final para evitar URLs tipo //analisis
     const API_BASE = "https://astroquant.onrender.com"; 
-
-    // Inicializar Gráfico
-    const chart = LightweightCharts.createChart(document.getElementById('tv-chart'), {
-        layout: { background: { color: '#0f0f0f' }, textColor: '#00ffcc' },
-        grid: { vertLines: { color: '#1a1a1a' }, horzLines: { color: '#1a1a1a' } },
-        timeScale: { borderColor: '#333', timeVisible: true },
-    });
-
-    // CORRECCIÓN: addCandlesticksSeries (con S) para la versión actual
-    const candleSeries = chart.addCandlesticksSeries({
-        upColor: '#00ffcc', downColor: '#ff3e3e', borderVisible: false,
-        wickUpColor: '#00ffcc', wickDownColor: '#ff3e3e'
-    });
-
-    const ema200Line = chart.addLineSeries({ color: '#ff9f43', lineWidth: 1, title: 'EMA 200' });
+    let chart, candleSeries, ema200Line;
 
     function addLog(msg) {
         const consoleDiv = document.getElementById('console-logs');
@@ -147,67 +88,73 @@
         consoleDiv.scrollTop = consoleDiv.scrollHeight;
     }
 
+    // Inicializar gráfico solo una vez
+    function initChart() {
+        const container = document.getElementById('tv-chart');
+        chart = LightweightCharts.createChart(container, {
+            layout: { background: { color: '#0f0f0f' }, textColor: '#00ffcc' },
+            grid: { vertLines: { color: '#1a1a1a' }, horzLines: { color: '#1a1a1a' } },
+            timeScale: { borderColor: '#333', timeVisible: true },
+        });
+        candleSeries = chart.addCandlestickSeries({
+            upColor: '#00ffcc', downColor: '#ff3e3e', borderVisible: false,
+            wickUpColor: '#00ffcc', wickDownColor: '#ff3e3e'
+        });
+        ema200Line = chart.addLineSeries({ color: '#ff9f43', lineWidth: 1, title: 'EMA 200' });
+        addLog("CHART_ENGINE: LOADED_VERSION_3.8.0");
+    }
+
     async function fetchData() {
         try {
             addLog("REQUESTING DATA FROM REMOTE_SERVER...");
-            
-            const [resAnalisis, resCandles] = await Promise.all([
+            const [resA, resC] = await Promise.all([
                 fetch(`${API_BASE}/analisis`),
                 fetch(`${API_BASE}/candles-1h`)
             ]);
 
-            const data = await resAnalisis.json();
-            const candles = await resCandles.json();
+            const data = await resA.json();
+            const candles = await resC.json();
 
-            // 1. Actualizar Cabecera
             document.getElementById('btc-price').innerText = `$ ${data.btc_price.toLocaleString()}`;
             document.getElementById('insight-display').innerText = data.insight;
-            document.getElementById('connection-status').innerText = "SYNC_STATE: OK // ENCRYPTED_SSL";
+            document.getElementById('connection-status').innerText = "SYNC_STATE: OK";
 
-            // 2. Sidebar Astrología
+            // Actualizar Astro
             const astroList = document.getElementById('astro-list');
             astroList.innerHTML = '';
             for (const [p, pos] of Object.entries(data.astrology)) {
                 astroList.innerHTML += `<div class="astro-item"><span>${p.toUpperCase()}</span> <span>${pos}</span></div>`;
             }
 
-            // 3. Gráfico y Señales Técnicas
-            if (candles.length > 0) {
-                const last = candles[candles.length - 1];
-                
-                // Velas
+            // Actualizar Gráfico
+            if (candles && candles.length > 0) {
                 candleSeries.setData(candles.map(c => ({
                     time: c.time / 1000, 
-                    open: parseFloat(c.open), 
-                    high: parseFloat(c.high), 
-                    low: parseFloat(c.low), 
-                    close: parseFloat(c.close)
+                    open: parseFloat(c.open), high: parseFloat(c.high), 
+                    low: parseFloat(c.low), close: parseFloat(c.close)
                 })));
 
-                // EMA 200
-                ema200Line.setData(candles.filter(c => c.ema200).map(c => ({
-                    time: c.time / 1000, 
-                    value: parseFloat(c.ema200)
+                ema200Line.setData(candles.filter(c => c.ema200 > 0).map(c => ({
+                    time: c.time / 1000, value: parseFloat(c.ema200)
                 })));
 
-                // Actualizar Sidebar Derecha
-                document.getElementById('val-rsi').innerText = last.rsi ? last.rsi.toFixed(2) : "--";
-                document.getElementById('val-willr').innerText = last.willr ? last.willr.toFixed(2) : "--";
+                const last = candles[candles.length - 1];
+                document.getElementById('val-rsi').innerText = last.rsi.toFixed(2);
+                document.getElementById('val-willr').innerText = last.willr.toFixed(2);
                 document.getElementById('val-ema200').innerText = last.ema200 > last.close ? "BEARISH" : "BULLISH";
-                document.getElementById('val-macd').innerText = last.macd_h ? last.macd_h.toFixed(2) : "--";
+                document.getElementById('val-macd').innerText = last.macd_h.toFixed(2);
                 
-                addLog(`DATA_SYNC COMPLETE: BTC @ ${data.btc_price}`);
+                addLog(`SYNC_COMPLETE: BTC @ ${data.btc_price}`);
             }
-
         } catch (e) {
-            addLog(`CRITICAL_ERROR: ${e.message}`);
-            document.getElementById('connection-status').innerText = "SYNC_STATE: RETRYING_CONNECTION...";
+            addLog(`SYNC_ERROR: RECONNECTING...`);
+            document.getElementById('connection-status').innerText = "SYNC_STATE: ERROR";
         }
     }
 
-    setInterval(fetchData, 30000);
+    initChart();
     fetchData();
+    setInterval(fetchData, 30000);
 </script>
-
 </body>
 </html>
