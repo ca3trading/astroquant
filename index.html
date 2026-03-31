@@ -113,34 +113,80 @@
     }
 
     // --- DIBUJAR CARTA NATAL (CANVAS) ---
-    function drawZodiac(planets) {
-        const canvas = document.getElementById('zodiacCanvas');
-        const ctx = canvas.getContext('2d');
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = 100;
+function drawZodiac(planets) {
+    const canvas = document.getElementById('zodiacCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Ajustar resolución del canvas para que se vea nítido
+    canvas.width = 300;
+    canvas.height = 300;
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const outerRadius = 130;
+    const innerRadius = 100;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Círculo base
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 1. Dibujar el Anillo Exterior (Zodiaco)
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = '#2a2e39';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 2. Dibujar las 12 divisiones de los signos
+    const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
+    for (let i = 0; i < 12; i++) {
+        const angle = (i * 30) * (Math.PI / 180);
+        const startX = centerX + innerRadius * Math.cos(angle);
+        const startY = centerY + innerRadius * Math.sin(angle);
+        const endX = centerX + outerRadius * Math.cos(angle);
+        const endY = centerY + outerRadius * Math.sin(angle);
+
+        // Líneas divisoras
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
         ctx.strokeStyle = '#2a2e39';
         ctx.stroke();
 
-        // Dibujar planetas
-        Object.entries(planets).forEach(([name, pos], i) => {
-            const deg = parseFloat(pos);
-            const angle = (deg - 90) * (Math.PI / 180);
-            const x = centerX + radius * Math.cos(angle);
-            const y = centerY + radius * Math.sin(angle);
-
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, Math.PI * 2);
-            ctx.fillStyle = i % 2 === 0 ? '#7d84ff' : '#00ffcc';
-            ctx.fill();
-        });
+        // Etiquetas de los signos (opcional, para referencia visual)
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle + (15 * Math.PI / 180));
+        ctx.fillStyle = '#4a4e59';
+        ctx.font = '9px Arial';
+        ctx.fillText(signs[i], innerRadius + 5, 5);
+        ctx.restore();
     }
+
+    // 3. Dibujar el Círculo Interior
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = '#2a2e39';
+    ctx.stroke();
+
+    // 4. Posicionar Planetas en el Anillo
+    Object.entries(planets).forEach(([name, pos], i) => {
+        const deg = parseFloat(pos);
+        // Ajustamos el ángulo (restando 90 para que Aries empiece a las 9 en punto o ajusta según prefieras)
+        const angle = (deg - 180) * (Math.PI / 180); 
+        const x = centerX + (innerRadius - 15) * Math.cos(angle);
+        const y = centerY + (innerRadius - 15) * Math.sin(angle);
+
+        // Brillo del planeta
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = (name === 'Sun' || name === 'Moon') ? '#fff' : '#7d84ff';
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = (name === 'Sun') ? '#ffcc00' : (name === 'Moon') ? '#fff' : '#7d84ff';
+        ctx.fill();
+        
+        ctx.shadowBlur = 0; // Reset brillo
+    });
+}
 
     async function sync() {
         try {
