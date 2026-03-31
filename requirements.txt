@@ -1,6 +1,6 @@
 fastapi
 uvicorn
 ccxt
-pandas
-pandas_ta
+pandas==2.2.2
+pandas_ta==0.3.14b0
 pyswisseph
