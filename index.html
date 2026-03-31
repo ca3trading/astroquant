@@ -29,6 +29,12 @@
         #zodiacCanvas { max-width: 100%; height: 280px; }
         .astro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.75rem; margin-top: 10px; }
 
+        #zodiacCanvas { 
+        font-family: "Noto Sans Symbols", "DejaVu Sans", sans-serif; 
+        max-width: 100%; 
+        height: 300px; /* Ajusta la altura para que sea cuadrado */
+        }
+        
         /* Main Content: 3 Gráficos */
         .charts-container { 
             grid-column: 2 / 3; display: grid; 
@@ -117,73 +123,105 @@ function drawZodiac(planets) {
     const canvas = document.getElementById('zodiacCanvas');
     const ctx = canvas.getContext('2d');
     
-    // Ajustar resolución del canvas para que se vea nítido
+    // Configuración de resolución y centro
     canvas.width = 300;
     canvas.height = 300;
-    
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const outerRadius = 130;
-    const innerRadius = 100;
+    
+    // Anillos: Externo (Divisiones), Interno (Posición de Planetas)
+    const zodiacRadius = 135; // Anillo exterior con los nombres de los signos
+    const radixRadius = 100; // Anillo interior con las divisiones de 30°
+
+    // Configuración de estilos y glifos por planeta
+    const planetConfig = {
+        'Sun':     { glyph: '☉', color: '#FFD700', size: 18 }, // Oro
+        'Moon':    { glyph: '☽', color: '#FFFFFF', size: 16 }, // Blanco
+        'Mars':    { glyph: '♂', color: '#FF3E3E', size: 16 }, // Rojo
+        'Jupiter': { glyph: '♃', color: '#7D84FF', size: 16 }, // Azul/Púrpura
+        'Saturn':  { glyph: '♄', color: '#888888', size: 16 }, // Gris
+        'Venus':   { glyph: '♀', color: '#00FFCC', size: 16 }, // Verde Neón
+        'Mercury': { glyph: '☿', color: '#FFA500', size: 16 }, // Naranja
+        'default': { glyph: '●', color: '#7D84FF', size: 12 }
+    };
+
+    // Nombres de los signos (empezando en Aries a las 9 en punto)
+    const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // 1. Dibujar el Anillo Exterior (Zodiaco)
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, outerRadius, 0, Math.PI * 2);
+
+    // --- 1. DIBUJAR ESTRUCTURA DEL ZODIACO ---
+    ctx.lineWidth = 1;
     ctx.strokeStyle = '#2a2e39';
-    ctx.lineWidth = 2;
+
+    // Círculos concéntricos
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, zodiacRadius, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 2. Dibujar las 12 divisiones de los signos
-    const signs = ['ARI', 'TAU', 'GEM', 'CAN', 'LEO', 'VIR', 'LIB', 'SCO', 'SAG', 'CAP', 'AQU', 'PIS'];
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radixRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Líneas divisoras de signos (cada 30°)
+    ctx.font = '10px "Inter", sans-serif';
     for (let i = 0; i < 12; i++) {
-        const angle = (i * 30) * (Math.PI / 180);
-        const startX = centerX + innerRadius * Math.cos(angle);
-        const startY = centerY + innerRadius * Math.sin(angle);
-        const endX = centerX + outerRadius * Math.cos(angle);
-        const endY = centerY + outerRadius * Math.sin(angle);
+        // Rotación de divisiones: Aries empieza a las 9 en punto (180°)
+        const angle = (i * 30 - 180) * (Math.PI / 180); 
+        
+        // Línea divisora
+        const sX = centerX + radixRadius * Math.cos(angle);
+        const sY = centerY + radixRadius * Math.sin(angle);
+        const eX = centerX + zodiacRadius * Math.cos(angle);
+        const eY = centerY + zodiacRadius * Math.sin(angle);
+        ctx.beginPath(); ctx.moveTo(sX, sY); ctx.lineTo(eX, eY); ctx.stroke();
 
-        // Líneas divisoras
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.strokeStyle = '#2a2e39';
-        ctx.stroke();
-
-        // Etiquetas de los signos (opcional, para referencia visual)
+        // Nombres de los Signos (centrados en cada división)
         ctx.save();
         ctx.translate(centerX, centerY);
-        ctx.rotate(angle + (15 * Math.PI / 180));
-        ctx.fillStyle = '#4a4e59';
-        ctx.font = '9px Arial';
-        ctx.fillText(signs[i], innerRadius + 5, 5);
+        ctx.rotate(angle + (15 * Math.PI / 180)); // Rotar al centro de la división
+        ctx.fillStyle = '#666';
+        ctx.textAlign = 'center';
+        ctx.fillText(signs[i], zodiacRadius - 20, 4);
         ctx.restore();
     }
 
-    // 3. Dibujar el Círculo Interior
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = '#2a2e39';
-    ctx.stroke();
+    // --- 2. POSICIONAR GLIFOS DE PLANETAS ---
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
-    // 4. Posicionar Planetas en el Anillo
-    Object.entries(planets).forEach(([name, pos], i) => {
+    // Para evitar superposiciones si dos planetas están en el mismo grado (conjunción)
+    const occupiedPositions = [];
+
+    Object.entries(planets).forEach(([name, pos]) => {
         const deg = parseFloat(pos);
-        // Ajustamos el ángulo (restando 90 para que Aries empiece a las 9 en punto o ajusta según prefieras)
-        const angle = (deg - 180) * (Math.PI / 180); 
-        const x = centerX + (innerRadius - 15) * Math.cos(angle);
-        const y = centerY + (innerRadius - 15) * Math.sin(angle);
-
-        // Brillo del planeta
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = (name === 'Sun' || name === 'Moon') ? '#fff' : '#7d84ff';
-
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = (name === 'Sun') ? '#ffcc00' : (name === 'Moon') ? '#fff' : '#7d84ff';
-        ctx.fill();
+        // Ajuste de ángulo para que coincida con el zodiaco (Aries a las 9)
+        let angle = (deg - 180) * (Math.PI / 180);
         
+        // Ajuste de superposición (muy básico, mueve 2px si ya está ocupado)
+        occupiedPositions.forEach(p => {
+            if (Math.abs(p - deg) < 3) { // Si están a menos de 3 grados
+                angle += (3 * Math.PI / 180);
+            }
+        });
+        occupiedPositions.push(deg);
+
+        // Posición del glifo (un poco por fuera del anillo interior)
+        const planetRadius = radixRadius + 15; 
+        const x = centerX + planetRadius * Math.cos(angle);
+        const y = centerY + planetRadius * Math.sin(angle);
+
+        // Configuración específica del planeta
+        const config = planetConfig[name] || planetConfig['default'];
+
+        // Dibujar el Glifo
+        ctx.font = `${config.size}px "Noto Sans Symbols", "DejaVu Sans", sans-serif`;
+        ctx.fillStyle = config.color;
+        
+        // Añadir un pequeño brillo
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = config.color;
+        ctx.fillText(config.glyph, x, y);
         ctx.shadowBlur = 0; // Reset brillo
     });
 }
