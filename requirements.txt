@@ -3,3 +3,4 @@ uvicorn
 ccxt
 pandas
 pandas_ta
+pyswisseph
